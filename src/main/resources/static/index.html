@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Spring AI Chat</title>
+    <style>
+        :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; background: #0b1020; color: #e8ecf4; display: grid; place-items: center; }
+        main { width: min(850px, 94vw); height: min(780px, 94vh); background: #11182b; border: 1px solid #26304a; border-radius: 18px; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; box-shadow: 0 24px 70px #0008; }
+        header { padding: 20px 24px; border-bottom: 1px solid #26304a; }
+        h1 { font-size: 1.1rem; margin: 0; }
+        header p { color: #92a0ba; font-size: .85rem; margin: 5px 0 0; }
+        #messages { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+        .message { max-width: 82%; padding: 12px 15px; line-height: 1.5; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .assistant { align-self: flex-start; background: #1d2740; }
+        .user { align-self: flex-end; background: #3568d4; }
+        form { padding: 16px; border-top: 1px solid #26304a; display: flex; gap: 10px; }
+        textarea { flex: 1; resize: none; background: #0b1020; color: inherit; border: 1px solid #34415f; border-radius: 12px; padding: 12px; font: inherit; outline: none; }
+        textarea:focus { border-color: #5d8df1; }
+        button { border: 0; border-radius: 12px; padding: 0 20px; background: #65d6a6; color: #07140e; font-weight: 700; cursor: pointer; }
+        button:disabled { opacity: .5; cursor: wait; }
+    </style>
+</head>
+<body>
+<main>
+    <header><h1>Spring AI Chat</h1><p>OpenAI, connected through Spring AI</p></header>
+    <section id="messages" aria-live="polite">
+        <div class="message assistant">Hello! What would you like to talk about?</div>
+    </section>
+    <form id="chat-form">
+        <textarea id="message" rows="2" maxlength="10000" placeholder="Type a message…" required></textarea>
+        <button type="submit">Send</button>
+    </form>
+</main>
+<script>
+    const form = document.querySelector('#chat-form');
+    const input = document.querySelector('#message');
+    const messages = document.querySelector('#messages');
+    const button = form.querySelector('button');
+
+    function addMessage(text, role) {
+        const element = document.createElement('div');
+        element.className = `message ${role}`;
+        element.textContent = text;
+        messages.append(element);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const message = input.value.trim();
+        if (!message) return;
+        addMessage(message, 'user');
+        input.value = '';
+        button.disabled = true;
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message})
+            });
+            const body = await response.json();
+            if (!response.ok) throw new Error(body.message || 'The request failed');
+            addMessage(body.reply, 'assistant');
+        } catch (error) {
+            addMessage(`Error: ${error.message}`, 'assistant');
+        } finally {
+            button.disabled = false;
+            input.focus();
+        }
+    });
+
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            form.requestSubmit();
+        }
+    });
+</script>
+</body>
+</html>

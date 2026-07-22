@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: spring-ai-chat-openai
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: ${OPENAI_MODEL:gpt-5.6}
+
+server:
+  error:
+    include-message: always
